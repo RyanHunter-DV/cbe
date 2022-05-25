@@ -1,0 +1,186 @@
+"""
+file to process commands
+"""
+
+rhload 'cmdarg'
+
+## the command class, process/stores command information
+class Command #{
+    attr_accessor :supportOpts;
+    attr_accessor :lastarg;
+    attr_accessor :name;
+    attr_accessor :result;
+    attr_accessor :actions;
+
+    def initialize name ##{
+        @name=name.to_s;
+        @supportOpts=[];
+        @actions = [];
+        @lastarg = {};
+        ## TODO
+    end ##}
+
+    def cmdFormat ptrn,verbo=:needy ##{
+        if ptrn[0..6]=='<last> '
+            ## special for last argument
+            n = ptrn[7..ptrn.length-1];
+            @lastarg={:name=>n,:verbo=>verbo};
+        else
+            arg = CommandArg.new ptrn,verbo;
+            @supportOpts << arg;
+        end
+    end ##}
+
+
+
+    def action &block ##{
+        @actions << block;
+    end ##}
+
+end ##}
+
+## stores executable command, with information of the defined command
+class CommandExecutor < Command #{
+    attr_accessor :args;
+    attr_accessor :parent;
+
+    def initialize bcmd ##{
+        super bcmd.name;
+        @args = {};
+        @parent=bcmd;
+    end ##}
+
+    ## method to detect args from user input words.
+    def detectArgs argline ##{
+        if argline=='' && (@parent.supportOpts.length!=0 or !@parent.lastarg.empty?)
+            puts "Error, argument wrong, no args are entered"
+            return false;
+        end
+
+        ## detecting formatted options first
+        @parent.supportOpts.each do |a|
+            arg = a.getArg(argline);
+            len = argline.length;
+            if arg
+                args[a.name.to_s] = arg[:param];
+                prepart = arg[:spos]==0? '' : argline[0..arg[:spos]-1];
+                pospart = arg[:epos]==(len)? '' : argline[arg[:epos]..len-1];
+                argline = prepart+pospart;
+            end
+        end
+        ## if remained items in argline, they are all lastarg
+        if argline != '' && !@parent.lastarg.empty?
+            args[@parent.lastarg[:name].to_s] = argline;
+        end
+        return true;
+    end ##}
+
+
+
+    def execute ##{
+        parent.actions.each do |a|
+            self.instance_eval &a
+        end
+        parent.result = @result;
+    end ##}
+end ##}
+
+
+class CommandProcessor ##{
+
+    attr :lineargs;
+    attr :cmd;
+
+
+    def initialize
+        ## TODO
+    end
+
+
+    def loadPlugins plugs ##{
+        return if plugs.empty?;
+        ## TODO, rhload all cmd plugins simply.
+        plugs.each do |p|
+            rhload p.to_s;
+        end
+    end ##}
+
+    """
+    getCmd, getting commands from stdin, line string will be stored into class member :stdline
+    """
+    def getCmd
+        print ">> ";
+        stdline = STDIN.readline.chomp;
+        splitted = stdline.split(/ +/,2); ## remove all space
+        @cmd = splitted[0];
+        @lineargs = '';
+        @lineargs = splitted[1] if (splitted.length>1);
+        ## TODO
+    end
+
+    """
+    detecting command name from the stdline
+    """
+    def detectCmd ##{
+        CommandRegistry.searchCmd @cmd;
+    end ##}
+
+    """
+    processCmd, detecting commands from the raw string :stdline, and
+    return a CommandExecutor object
+    """
+    def processCmd
+        cmd  = detectCmd;
+        if cmd==nil
+            puts "Error, command not supported";
+            return nil;
+        end
+        cmdh = CommandExecutor.new cmd;
+        if cmdh.detectArgs @lineargs
+            cmdh.execute
+        end
+    end
+
+
+end ##}
+
+"""
+registry that stores all available command definition
+"""
+module CommandRegistry ##{
+    attr_accessor :cmds;
+    def self.executeCmd c ##{
+        ## TODO
+    end ##}
+
+    def self.searchCmd word ##{
+        @cmds.each do |c|
+            if c.name == word.to_s
+                return c;
+            end
+        end
+        return nil;
+    end ##}
+
+    def self.registerNewCmd nc ##{
+        @cmds=[] if @cmds==nil;
+        if self.searchCmd(nc.name) != nil
+            puts "Error, redefined command(#{nc.name})"
+            return false;
+        end
+        @cmds << nc;
+        return true;
+    end ##}
+
+end #}
+
+
+## API to define a new command
+def cmd name,opts={},&block ##{
+    nc = Command.new name;
+    if CommandRegistry.registerNewCmd(nc)
+        ## register success
+        nc.instance_eval &block;
+    end
+    ## register failed, do nothing
+end #}
