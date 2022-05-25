@@ -1,0 +1,132 @@
+
+def updateLineInfo cnts ##{
+    linenum = [];    
+    len = cnts.length;
+    len.times do |idx|
+        s   = len.to_s.length;
+        cl  = (idx+1).to_s;
+        cls = cl;
+        (s-cl.length+1).times do
+            cls += ' ';
+        end
+        linenum << cls;
+    end
+    return linenum;
+end ##}
+
+## define a new command :open
+cmd :open do ##{
+
+    cmdFormat '<last> file';
+    action do ##{
+        @result = {};
+        fh=File.open(args['file'],'r');
+        cnts    = fh.readlines;
+        fh.close();
+        @result[:cnts] = cnts;
+        @result[:filename] = args['file'];
+        @result[:linenum] = updateLineInfo cnts;
+        puts "file opened: #{args['file']}";
+        len = cnts.length;
+        len.times do |idx|
+            puts "#{@result[:linenum][idx]}#{cnts[idx]}"
+        end
+    end ##}
+
+end ##}
+
+cmd :w do ##{
+    """
+    save file, write contents into file
+    """
+    action do ##{
+        fn=CommandRegistry.searchCmd('open').result[:filename];
+        cnts=CommandRegistry.searchCmd('open').result[:cnts];
+        fh = File.open(fn,'w')
+        fh.write cnts.join();
+        fh.close;
+    end ## }
+end ##}
+
+cmd :q do ##{
+    action do ##{
+        ## TODO
+        exit 0;
+    end ## }
+end ##}
+cmd :wq do ##{
+    """
+    save file, write contents into file
+    """
+    action do ##{
+        fn=CommandRegistry.searchCmd('open').result[:filename];
+        cnts=CommandRegistry.searchCmd('open').result[:cnts];
+        fh = File.open(fn,'w')
+        fh.write cnts.join();
+        fh.close;
+        exit 0;
+    end ## }
+end ##}
+
+cmd :rl do ##{
+    """
+    read content from a specified line
+    """
+    cmdFormat '<last> linenum';
+    action do ##{
+        cnts=CommandRegistry.searchCmd('open').result[:cnts];
+        @result=cnts[args['linenum'].to_i-1]
+        puts "#{@result}"
+    end ##}
+end ##}
+
+cmd :mrl do ##{
+    """
+    multiple line read
+    """
+    cmdFormat '-l linenum';
+    cmdFormat '<last> startline';
+    action do ##{
+        cnts =CommandRegistry.searchCmd('open').result[:cnts];
+        lines=CommandRegistry.searchCmd('open').result[:linenum];
+        linenum = 10; ## default
+        max = cnts.length;
+        linenum = args['-l'] if args.has_key?('-l');
+        linenum.times do |i|
+            break if args['startline'].to_i+i > max;
+            linenum = args['startline'].to_i+i;
+            puts "#{lines[linenum-1]}#{cnts[linenum-1]}"
+        end
+    end ##}
+end ##}
+
+cmd :wl do ##{
+    cmdFormat '-l linenum',:needy;
+    cmdFormat '<last> string',:needy;
+    action do ##{
+        cnts=CommandRegistry.searchCmd('open').result[:cnts];
+        len = cnts.length;
+        linenum = args['-l'].to_i;
+        if linenum > len
+            for i in len..linenum-2
+                cnts.insert(i,"\n"); ## add blank lines if target linenum > existing lines
+            end
+        end
+        cnts.insert(linenum-1,args['string']+"\n");
+        CommandRegistry.searchCmd('open').result[:linenum] = updateLineInfo cnts;
+    end ##}
+end ##}
+
+## cmd to read all
+cmd :ra do ##{
+    action do ##{
+        cnts =CommandRegistry.searchCmd('open').result[:cnts];
+        lines=CommandRegistry.searchCmd('open').result[:linenum];
+        len = cnts.length;
+        len.times do |idx|
+            puts "#{lines[idx]}#{cnts[idx]}"
+        end
+    end ##} 
+end ##}
+
+
