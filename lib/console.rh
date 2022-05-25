@@ -1,0 +1,52 @@
+"""
+the main file running cbe tool
+"""
+ 
+rhload 'lib/options'
+rhload 'lib/cmdproc'
+
+
+class ConsoleApp; ##{
+    attr_accessor :options;
+    attr_accessor :cmdp;
+
+    def initialize
+        ## option process
+        options= optionParse;
+        @cmdp= CommandProcessor.new;
+        @cmdp.loadPlugins options[:cmds];
+    end
+
+    def welcomeMessage
+        ## format ...
+        ## print ...
+        puts "welcome to cbe, this is the test version"
+    end
+
+    def mainloop ##{
+
+        while (1) ##{
+            @cmdp.getCmd;
+            @cmdp.processCmd; ##TODO
+        end ##}
+    end ##}
+
+    """
+    starting main console panel, loop of getting inputs
+    """
+    def run
+        welcomeMessage;
+        ## TODO, toolVersionMessage;
+        mainloop;
+    end
+
+end ##}
+
+module Console; ##{
+
+    @app = nil;
+
+    def self.app; @app ||= ConsoleApp.new; end
+    def self.run; app.run; end
+
+end ##}
