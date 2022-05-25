@@ -1,0 +1,31 @@
+"""
+options process lib, process options that user entered along with the cbe command
+"""
+
+require "optparse";
+
+def optionParse
+    ## init options
+    options = {
+        :cmds => [],
+        :syntax => []
+    };
+
+    ## pre load base cmds
+    options[:cmds] << 'lib/baseop';
+
+    OptionParser.new do |parser|
+
+        parser.banner = "Usage: cbe [options]"
+
+        parser.on("-c","--cmd","extra commands") do |v|
+            options[:cmds] << v;
+        end
+        parser.on("-s","--syntax","syntax file") do |v|
+            options[:syntax] << v;
+        end
+
+    end.parse!
+
+    return options;
+end
