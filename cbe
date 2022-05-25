@@ -1,0 +1,12 @@
+#! /usr/bin/env ruby
+"""
+the main shell of cbe tool
+"""
+require 'rhload';
+
+$ToolHome = File.dirname(__FILE__);
+$LOAD_PATH << $ToolHome;
+
+rhload 'lib/console'
+
+Console.run;
