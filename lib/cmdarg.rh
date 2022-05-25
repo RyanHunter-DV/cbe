@@ -1,0 +1,55 @@
+## command argument class, process args from string line into arg object
+
+
+class CommandArg ##{
+    attr_accessor :verbo;
+    attr_accessor :prefix;
+    attr_accessor :suffix;
+    attr_accessor :param;
+    attr_accessor :name;
+
+    ## ptrn can be:
+    ## '-l linenum'
+    ## '-l'
+    def initialize ptrn,verbo ##{
+        @prefix= nil;
+        @suffix= nil;
+        @param = nil;
+        @verbo = verbo.to_sym;
+        splitFormats(ptrn);
+        @name   = @prefix;
+    end ##}
+    
+    def splitFormats ptrn ##{
+        splitted = ptrn.split(/ /);
+        if splitted.length > 1
+            @prefix = splitted[0];
+            @param  = splitted[1];
+        else
+            @prefix = splitted[0];
+            ## no param
+        end
+    end ##}
+
+    def getArg raw ##{
+        ps = '('+@prefix+')';
+        arg = nil;
+        if @param
+            ps += ' +(\S+)'
+        end
+        p = Regexp.new(ps);
+        m = p.match(raw);
+        if m
+            arg=Hash.new;
+            if @param
+                arg[:param] = m[2];
+            else
+                arg[:param] = true;
+            end
+            arg[:spos]  = m.begin(0);
+            arg[:epos]  = m.end(0);
+        end
+        return arg;
+    end ##}
+
+end ##}
