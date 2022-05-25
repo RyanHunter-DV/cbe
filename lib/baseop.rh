@@ -1,0 +1,15 @@
+"""
+file of base operations provided by tool creator
+"""
+
+rhload 'baseop/insert'
+rhload 'baseop/fileop'
+
+cmd :exit do ##{
+    ##cmdFormat 'sig';
+    action do ##{
+        ##at_exit {puts "program exit with SIG: #{args[:sig]}"}
+        ##exit args[:sig].to_i;
+        exit 0;
+    end ##}
+end ##}
